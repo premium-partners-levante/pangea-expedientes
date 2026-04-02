@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pangea — Gestión de Expedientes</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+:root{
+--navy:#1B2A4A;--navy-light:#2a3f66;--navy-dark:#0f1a2e;
+--gold:#C4975C;--gold-light:#d4ab76;--gold-dark:#a87d45;
+--bg:#f0f2f5;--white:#fff;
+--g100:#f7f8fa;--g200:#e9ecef;--g300:#dee2e6;--g400:#ced4da;--g500:#8a9099;--g700:#495057;--g900:#212529;
+--red:#dc3545;--green:#28a745;--blue:#0d6efd;--orange:#fd7e14;
+--radius:10px;--shadow:0 2px 12px rgba(27,42,74,.08);--shadow-lg:0 8px 32px rgba(27,42,74,.12);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--g900);min-height:100vh}
+
+/* === LOGIN === */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--navy),var(--navy-dark));padding:20px}
+.login-card{background:var(--white);border-radius:16px;padding:48px 40px;width:100%;max-width:420px;box-shadow:var(--shadow-lg);text-align:center}
+.login-card h2{color:var(--navy);font-size:28px;font-weight:700;margin-bottom:2px;letter-spacing:2px}
+.login-card .sub{color:var(--g500);font-size:14px;margin-bottom:32px}
+.lf{text-align:left;margin-bottom:18px}
+.lf label{display:block;font-size:13px;font-weight:600;color:var(--g700);margin-bottom:5px}
+.lf input{width:100%;padding:12px 16px;border:2px solid var(--g200);border-radius:8px;font-size:15px;font-family:inherit;outline:none;transition:border .2s}
+.lf input:focus{border-color:var(--gold)}
+.login-btn{width:100%;padding:14px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .2s;margin-top:8px}
+.login-btn:hover{background:var(--navy-light)}
+.login-btn:disabled{opacity:.6;cursor:not-allowed}
+.login-error{color:var(--red);font-size:13px;margin-top:12px;min-height:20px}
+.spin{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* === APP SHELL === */
+#app{display:none}
+.topbar{background:var(--navy);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
+.topbar .logo{color:var(--gold-light);font-size:18px;font-weight:700;letter-spacing:2px}
+.topbar-right{display:flex;align-items:center;gap:16px;color:#fff;font-size:13px}
+.topbar-right span{opacity:.6}
+.topbar-right strong{color:var(--gold-light)}
+.btn-logout{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;padding:6px 14px;border-radius:6px;font-size:12px;font-family:inherit;cursor:pointer}
+.btn-logout:hover{background:rgba(255,255,255,.2)}
+
+/* === VIEWS === */
+.view{display:none;max-width:960px;margin:0 auto;padding:24px 20px 40px}
+.view.active{display:block}
+
+/* === DASHBOARD === */
+.dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.dash-header h1{font-size:24px;color:var(--navy)}
+.btn-new{padding:12px 24px;background:var(--gold);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .2s}
+.btn-new:hover{background:var(--gold-dark)}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+@media(max-width:700px){.stats{grid-template-columns:1fr 1fr}}
+.stat-card{background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.stat-card .stat-label{font-size:12px;color:var(--g500);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.stat-card .stat-val{font-size:28px;font-weight:700;color:var(--navy)}
+.stat-card .stat-val.gold{color:var(--gold)}
+
+.card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--g200);display:flex;align-items:center;justify-content:space-between}
+.card-header h2{font-size:16px;color:var(--navy)}
+.search-box{padding:8px 14px;border:1.5px solid var(--g200);border-radius:7px;font-size:13px;font-family:inherit;outline:none;width:260px;transition:border .2s}
+.search-box:focus{border-color:var(--gold)}
+.empty-state{padding:48px 20px;text-align:center;color:var(--g500);font-size:14px}
+.exp-list{width:100%}
+.exp-list th{text-align:left;padding:10px 16px;font-size:12px;color:var(--g500);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--g200);background:var(--g100)}
+.exp-list td{padding:12px 16px;font-size:13px;border-bottom:1px solid var(--g100)}
+.exp-list tr:hover td{background:var(--g100);cursor:pointer}
+.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
+.badge-open{background:#e8f5e9;color:#2e7d32}
+.badge-pending{background:#fff3e0;color:#e65100}
+.badge-closed{background:var(--g200);color:var(--g700)}
+
+/* === FORM (CREATE/EDIT) === */
+.form-header{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+.form-header h1{font-size:22px;color:var(--navy)}
+.btn-back{background:none;border:none;color:var(--g500);font-size:24px;cursor:pointer;padding:4px}
+.btn-back:hover{color:var(--navy)}
+
+.section{background:var(--white);border-radius:var(--radius);padding:24px;margin-bottom:16px;box-shadow:var(--shadow)}
+.section-title{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-title .ico{font-size:18px}
+
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.fr.c3{grid-template-columns:1fr 1fr 1fr}
+.fr.c4{grid-template-columns:1fr 1fr 1fr 1fr}
+.fr.c1{grid-template-columns:1fr}
+@media(max-width:640px){.fr,.fr.c3,.fr.c4{grid-template-columns:1fr}}
+
+.fd label{display:block;font-size:12px;font-weight:600;color:var(--g700);margin-bottom:3px}
+.fd label .req{color:var(--red)}
+.fd input,.fd select,.fd textarea{width:100%;padding:9px 12px;border:1.5px solid var(--g200);border-radius:7px;font-size:14px;font-family:inherit;outline:none;transition:border .2s;background:var(--white)}
+.fd input:focus,.fd select:focus,.fd textarea:focus{border-color:var(--gold)}
+.fd textarea{resize:vertical;min-height:70px}
+.fd input:read-only{background:var(--g100);color:var(--g700)}
+.fd-hint{font-size:11px;color:var(--g500);margin-top:2px}
+
+/* Smart paste area */
+.paste-zone{border:2px dashed var(--g300);border-radius:8px;padding:16px;margin-bottom:16px;transition:all .2s}
+.paste-zone:focus-within{border-color:var(--gold);background:#fefaf5}
+.paste-zone textarea{border:none;width:100%;font-size:13px;font-family:inherit;outline:none;resize:vertical;min-height:80px;background:transparent}
+.paste-zone .paste-label{font-size:12px;font-weight:600;color:var(--gold-dark);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.paste-ok{color:var(--green);font-size:13px;font-weight:600;margin-top:8px;display:none}
+
+/* Margin display */
+.margin-bar{display:flex;gap:24px;align-items:center;padding:12px 16px;background:var(--g100);border-radius:8px;margin-top:8px;flex-wrap:wrap}
+.margin-item{font-size:13px;color:var(--g700)}
+.margin-item strong{color:var(--navy);font-size:15px}
+.margin-item.subtle{opacity:.6;font-size:12px}
+.margin-item.subtle strong{font-size:13px}
+
+/* Service/Payment cards */
+.dyn-card{background:var(--g100);border:1px solid var(--g200);border-radius:8px;padding:16px;margin-bottom:12px;position:relative}
+.dyn-card .rm{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:4px}
+.btn-add{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;background:var(--g100);border:1.5px dashed var(--g300);border-radius:8px;color:var(--navy);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer}
+.btn-add:hover{background:var(--g200);border-color:var(--g500)}
+.empty-msg{color:var(--g500);font-size:13px;padding:8px 0}
+
+/* Totals bar */
+.totals-bar{position:fixed;bottom:0;left:0;right:0;background:var(--navy);color:#fff;padding:10px 24px;display:none;align-items:center;justify-content:center;gap:28px;z-index:100;font-size:12px}
+.totals-bar.show{display:flex}
+.totals-bar .ti span{opacity:.6}
+.totals-bar .ti strong{color:var(--gold-light);font-size:15px;margin-left:4px}
+@media(max-width:640px){.totals-bar{flex-wrap:wrap;gap:8px 20px;padding:8px 16px}}
+
+/* Submit */
+.submit-area{text-align:center;margin:24px 0}
+.btn-submit{padding:14px 48px;background:var(--gold);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer}
+.btn-submit:hover{background:var(--gold-dark)}
+.btn-submit:disabled{opacity:.6;cursor:not-allowed}
+
+/* Modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
+.modal-bg.active{display:flex}
+.modal{background:#fff;border-radius:14px;padding:40px;text-align:center;max-width:400px;width:90%}
+.modal .mi{font-size:48px;margin-bottom:12px}
+.modal h3{font-size:20px;color:var(--navy);margin-bottom:8px}
+.modal p{color:var(--g500);font-size:14px;margin-bottom:20px}
+.btn-modal{padding:10px 32px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="loginScreen">
+<div class="login-card">
+<h2>PANGEA</h2>
+<p class="sub">Gestión de Expedientes — Acceso Asesores</p>
+<div class="lf"><label>Usuario</label><input type="text" id="loginUser" placeholder="Tu usuario" autocomplete="username"></div>
+<div class="lf"><label>Contraseña</label><input type="password" id="loginPass" placeholder="Tu contraseña" autocomplete="current-password"></div>
+<button class="login-btn" id="loginBtn" onclick="doLogin()">Acceder</button>
+<div class="login-error" id="loginError"></div>
+</div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app">
+<div class="topbar">
+<div class="logo">PANGEA</div>
+<div class="topbar-right">
+<div><span>Asesor:</span> <strong id="tbUser">—</strong> &nbsp;<span>Tienda:</span> <strong id="tbTienda">—</strong></div>
+<button class="btn-logout" onclick="doLogout()">Cerrar sesión</button>
+</div>
+</div>
+
+<!-- == DASHBOARD == -->
+<div class="view active" id="viewDash">
+<div class="dash-header">
+<h1>📋 Mis Expedientes</h1>
+<button class="btn-new" onclick="showView('viewCreate')">＋ Nuevo Expediente</button>
+</div>
+
+<div class="stats">
+<div class="stat-card"><div class="stat-label">Total expedientes</div><div class="stat-val" id="stTotal">0</div></div>
+<div class="stat-card"><div class="stat-label">Abiertos</div><div class="stat-val gold" id="stOpen">0</div></div>
+<div class="stat-card"><div class="stat-label">Pendientes cobro</div><div class="stat-val" id="stPend">0</div></div>
+<div class="stat-card"><div class="stat-label">Listos facturar</div><div class="stat-val" id="stReady">0</div></div>
+</div>
+
+<div class="card">
+<div class="card-header">
+<h2>Expedientes</h2>
+<input type="text" class="search-box" placeholder="Buscar por Num OP, cliente..." id="searchExp" oninput="filterExp()">
+</div>
+<div id="expListWrap">
+<div class="empty-state" id="expEmpty">
+<p style="font-size:32px;margin-bottom:8px">📂</p>
+<p>Aún no hay expedientes registrados.</p>
+<p style="margin-top:8px">Haz clic en <strong>"＋ Nuevo Expediente"</strong> para empezar.</p>
+</div>
+<table class="exp-list" id="expTable" style="display:none">
+<thead><tr><th>Num OP</th><th>Cliente</th><th>Viaje</th><th>Asesor</th><th>Estado</th><th>PVP</th></tr></thead>
+<tbody id="expBody"></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<!-- == CREATE EXPEDIENTE == -->
+<div class="view" id="viewCreate">
+<div class="form-header">
+<button class="btn-back" onclick="showView('viewDash')">←</button>
+<h1>Nuevo Expediente</h1>
+</div>
+
+<!-- Identificación -->
+<div class="section">
+<div class="section-title"><span class="ico">🏷️</span> Identificación</div>
+<div class="fr">
+<div class="fd">
+<label>Número de expediente (OP) <span class="req">*</span></label>
+<input type="text" id="numOP" placeholder="Ej: OP00370701">
+<div class="fd-hint">Copia el número de Salesforce</div>
+</div>
+<div class="fd">
+<label>Fecha de reserva</label>
+<input type="date" id="fechaReserva">
+</div>
+</div>
+</div>
+
+<!-- Pegado inteligente -->
+<div class="section">
+<div class="section-title"><span class="ico">📋</span> Datos de la reserva</div>
+<div class="paste-zone" id="pasteZone">
+<div class="paste-label">📎 Pega aquí el texto de Salesforce (o rellena manualmente abajo)</div>
+<textarea id="pasteArea" placeholder="Pega aquí el texto con los datos de la reserva...&#10;&#10;Importe total reserva&#10;EUR 2.586,00&#10;NetAmount&#10;EUR 1.429,80&#10;Localizador Reserva&#10;PNG-13337&#10;..." oninput="parsePaste()"></textarea>
+<div class="paste-ok" id="pasteOk">✓ Datos detectados correctamente</div>
+</div>
+<div class="fr c3">
+<div class="fd">
+<label>PVP Cliente (€) <span class="req">*</span></label>
+<input type="number" step="0.01" id="pvpCliente" value="" placeholder="0.00" oninput="calcMargins()">
+</div>
+<div class="fd">
+<label>Coste / NetAmount (€) <span class="req">*</span></label>
+<input type="number" step="0.01" id="costeServicio" value="" placeholder="0.00" oninput="calcMargins()">
+</div>
+<div class="fd">
+<label>Localizador reserva</label>
+<input type="text" id="locReserva" placeholder="Ej: PNG-13337">
+</div>
+</div>
+<div class="margin-bar" id="marginBar" style="display:none">
+<div class="margin-item">Beneficio bruto: <strong id="mBruto">0,00 €</strong></div>
+<div class="margin-item">Margen bruto: <strong id="mBrutoPct">0%</strong></div>
+<div class="margin-item subtle">Margen neto (–21% IVA): <strong id="mNeto">0,00 €</strong></div>
+<div class="margin-item subtle">% neto: <strong id="mNetoPct">0%</strong></div>
+</div>
+</div>
+
+<!-- Viaje -->
+<div class="section">
+<div class="section-title"><span class="ico">✈️</span> Datos del Viaje</div>
+<div class="fr">
+<div class="fd"><label>Título del viaje <span class="req">*</span></label><input type="text" id="viajeTitulo" placeholder="Ej: Viaje a Bali"></div>
+<div class="fd"><label>Situación</label>
+<select id="viajeSituacion">
+<option value="A">Abierto</option>
+<option value="I">Pdte. Pago Cliente</option>
+<option value="P">Pdte. Pago Mayorista</option>
+<option value="F">Pdte. Factura</option>
+<option value="O">OK</option>
+<option value="C">Cerrado</option>
+<option value="D">Cancelado</option>
+</select></div>
+</div>
+<div class="fr">
+<div class="fd"><label>Fecha inicio viaje <span class="req">*</span></label><input type="date" id="viajeFechaInicio"></div>
+<div class="fd"><label>Fecha fin viaje</label><input type="date" id="viajeFechaFin"></div>
+</div>
+<div class="fr">
+<div class="fd"><label>F. Lím. Pago Cliente</label><input type="date" id="viajeFlimCliente"></div>
+<div class="fd"><label>F. Lím. Pago Mayorista</label><input type="date" id="viajeFlimMayo"></div>
+</div>
+</div>
+
+<!-- Cliente -->
+<div class="section">
+<div class="section-title"><span class="ico">👤</span> Datos del Cliente</div>
+<div class="fr">
+<div class="fd"><label>Nombre <span class="req">*</span></label><input type="text" id="cliNombre"></div>
+<div class="fd"><label>Apellidos <span class="req">*</span></label><input type="text" id="cliApellidos"></div>
+</div>
+<div class="fr">
+<div class="fd"><label>DNI / NIE <span class="req">*</span></label><input type="text" id="cliDni"></div>
+<div class="fd"><label>Email <span class="req">*</span></label><input type="email" id="cliEmail"></div>
+</div>
+<div class="fr">
+<div class="fd"><label>Teléfono</label><input type="tel" id="cliTel"></div>
+<div class="fd"><label>Ciudad / Provincia</label><input type="text" id="cliCiudad"></div>
+</div>
+</div>
+
+<!-- Servicios -->
+<div class="section">
+<div class="section-title"><span class="ico">📦</span> Servicios</div>
+<div id="servCont"></div>
+<button class="btn-add" onclick="addServ()">＋ Añadir servicio</button>
+</div>
+
+<!-- Pagos Cliente -->
+<div class="section">
+<div class="section-title"><span class="ico">💳</span> Pagos del Cliente</div>
+<div id="pagoCont"><p class="empty-msg" id="pagoEmpty">Sin pagos registrados</p></div>
+<button class="btn-add" onclick="addPago()">＋ Añadir pago</button>
+</div>
+
+<!-- Observaciones -->
+<div class="section">
+<div class="section-title"><span class="ico">📝</span> Observaciones</div>
+<div class="fr c1"><div class="fd"><textarea id="viajeObs" rows="3" placeholder="Observaciones generales del expediente..."></textarea></div></div>
+</div>
+
+<!-- Notas internas (IA) -->
+<div class="section">
+<div class="section-title"><span class="ico">🤖</span> Notas internas (desde Salesforce)</div>
+<div class="paste-zone">
+<div class="paste-label">📎 Pega aquí las notas de oportunidad de Salesforce</div>
+<textarea id="notasSF" placeholder="Pega el texto completo de 'Notas Oportunidad' de Salesforce...&#10;El sistema generará un resumen automático con puntos clave del cliente." rows="4"></textarea>
+</div>
+<div id="notasResumen" style="display:none;margin-top:12px;padding:16px;background:var(--g100);border-radius:8px;font-size:13px;color:var(--g700)"></div>
+</div>
+
+<!-- Submit -->
+<div class="submit-area">
+<button class="btn-submit" id="btnSubmit" onclick="guardarExpediente()">Guardar Expediente</button>
+</div>
+</div>
+
+<!-- Totals bar -->
+<div class="totals-bar" id="totalsBar">
+<div class="ti"><span>Total Venta</span><strong id="tVenta">0,00 €</strong></div>
+<div class="ti"><span>Total Coste</span><strong id="tCoste">0,00 €</strong></div>
+<div class="ti"><span>Beneficio</span><strong id="tBenef">0,00 €</strong></div>
+<div class="ti"><span>Pdte. Cobro</span><strong id="tPdte">0,00 €</strong></div>
+</div>
+</div>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal">
+<div class="modal">
+<div class="mi" id="mIcon">✅</div>
+<h3 id="mTitle">OK</h3>
+<p id="mMsg">Mensaje</p>
+<button class="btn-modal" onclick="closeModal()">Aceptar</button>
+</div>
+</div>
+
+<script>
+/* ===== CONFIG ===== */
+const WH_LOGIN='https://hook.eu1.make.com/kf4v3ec8oxc63bv794t9dlo27z66kgtc';
+const WH_EXPEDIENTE='https://hook.eu1.make.com/srvfc3lidnpc11xde5211gjr9arr91oe';
+let U=null;
+
+/* ===== LOGIN ===== */
+$('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+$('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginPass').focus()});
+
+async function doLogin(){
+const user=$('loginUser').value.trim(),pass=$('loginPass').value.trim(),err=$('loginError'),btn=$('loginBtn');
+err.textContent='';
+if(!user||!pass){err.textContent='Introduce usuario y contraseña';return}
+btn.disabled=true;btn.innerHTML='<span class="spin"></span> Verificando...';
+try{
+const r=await fetch(WH_LOGIN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario:user,password:pass})});
+const d=await r.json();
+if(!d.ok||!d.nombre){err.textContent='Usuario no encontrado';btn.disabled=false;btn.textContent='Acceder';return}
+if(d.password!==pass){err.textContent='Contraseña incorrecta';btn.disabled=false;btn.textContent='Acceder';return}
+if(d.estado&&d.estado.toLowerCase()!=='activo'){err.textContent='Cuenta desactivada. Contacta al administrador.';btn.disabled=false;btn.textContent='Acceder';return}
+U={nombre:d.nombre,rol:d.rol,tienda:d.tienda,idAgente:d.idAgente};
+$('loginScreen').style.display='none';
+$('app').style.display='block';
+$('tbUser').textContent=U.nombre;
+$('tbTienda').textContent=U.tienda||'—';
+}catch(e){err.textContent='Error de conexión. Inténtalo de nuevo.';btn.disabled=false;btn.textContent='Acceder'}}
+
+function doLogout(){
+U=null;$('app').style.display='none';$('loginScreen').style.display='flex';
+$('loginUser').value='';$('loginPass').value='';$('loginError').textContent='';
+$('loginBtn').disabled=false;$('loginBtn').textContent='Acceder'}
+
+/* ===== NAVIGATION ===== */
+function showView(id){
+document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+$(id).classList.add('active');
+const bar=$('totalsBar');
+bar.classList.toggle('show',id==='viewCreate');
+if(id==='viewCreate')calcTotals();
+}
+
+/* ===== SMART PASTE ===== */
+function parsePaste(){
+const txt=$('pasteArea').value;
+if(!txt.trim())return;
+
+// Importe total reserva → PVP
+const pvpMatch=txt.match(/Importe total reserva\s*\n\s*EUR\s*([\d.,]+)/i);
+if(pvpMatch){$('pvpCliente').value=parseEUR(pvpMatch[1])}
+
+// NetAmount → Coste
+const costMatch=txt.match(/NetAmount\s*\n\s*EUR\s*([\d.,]+)/i);
+if(costMatch){$('costeServicio').value=parseEUR(costMatch[1])}
+
+// Localizador
+const locMatch=txt.match(/Localizador Reserva\s*\n\s*(\S+)/i);
+if(locMatch){$('locReserva').value=locMatch[1]}
+
+// Fecha Reserva
+const fechaMatch=txt.match(/Fecha Reserva\s*\n\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
+if(fechaMatch){
+const p=fechaMatch[1].split('/');
+const iso=p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+$('fechaReserva').value=iso;
+}
+
+if(pvpMatch||costMatch||locMatch){
+$('pasteOk').style.display='block';
+calcMargins();calcTotals();
+}
+}
+
+function parseEUR(s){return parseFloat(s.replace(/\./g,'').replace(',','.'))||0}
+
+/* ===== MARGINS ===== */
+function calcMargins(){
+const pvp=parseFloat($('pvpCliente').value)||0;
+const coste=parseFloat($('costeServicio').value)||0;
+const bar=$('marginBar');
+if(pvp>0||coste>0){
+bar.style.display='flex';
+const bruto=pvp-coste;
+const brutoPct=pvp>0?(bruto/pvp*100):0;
+const neto=bruto/1.21;
+const netoPct=pvp>0?(neto/pvp*100):0;
+$('mBruto').textContent=fmt(bruto);
+$('mBrutoPct').textContent=brutoPct.toFixed(1)+'%';
+$('mNeto').textContent=fmt(neto);
+$('mNetoPct').textContent=netoPct.toFixed(1)+'%';
+}else{bar.style.display='none'}
+calcTotals();
+}
+
+/* ===== SERVICIOS ===== */
+let sn=0;
+function addServ(){
+sn++;const id=sn;
+const h=`<div class="dyn-card" id="s${id}"><button class="rm" onclick="rmServ(${id})">✕</button>
+<div class="fr c1"><div class="fd"><label>Descripción <span class="req">*</span></label><input type="text" id="sd${id}" placeholder="Ej: Hotel, Vuelo, Seguro..."></div></div>
+<div class="fr c3">
+<div class="fd"><label>PVP Recomendado</label><input type="number" step="0.01" id="sr${id}" value="0" oninput="calcTotals()"></div>
+<div class="fd"><label>PVP Agencia <span class="req">*</span></label><input type="number" step="0.01" id="sa${id}" value="0" oninput="calcTotals()"></div>
+<div class="fd"><label>Precio Coste <span class="req">*</span></label><input type="number" step="0.01" id="sc${id}" value="0" oninput="calcTotals()"></div>
+</div>
+<div class="fr c3">
+<div class="fd"><label>Proveedor</label><input type="text" id="sp${id}" placeholder="Nombre proveedor"></div>
+<div class="fd"><label>ID Proveedor Siturweb</label><input type="text" id="si${id}" placeholder="Ej: 165"></div>
+<div class="fd"><label>Localizador</label><input type="text" id="sl${id}"></div>
+</div></div>`;
+$('servCont').insertAdjacentHTML('beforeend',h);calcTotals()}
+
+function rmServ(id){$('s'+id).remove();calcTotals()}
+
+/* ===== PAGOS ===== */
+let pn=0;
+function addPago(){
+pn++;const id=pn;$('pagoEmpty').style.display='none';
+const today=new Date().toISOString().split('T')[0];
+const h=`<div class="dyn-card" id="p${id}"><button class="rm" onclick="rmPago(${id})">✕</button>
+<div class="fr c4">
+<div class="fd"><label>Descripción</label><select id="pd${id}"><option>Confirmación reserva</option><option>Abono a cuenta</option><option>Abono importe restante</option><option>Abono importe total</option><option>Abono financiación</option></select></div>
+<div class="fd"><label>Fecha</label><input type="date" id="pf${id}" value="${today}"></div>
+<div class="fd"><label>Importe</label><input type="number" step="0.01" id="pi${id}" value="0" oninput="calcTotals()"></div>
+<div class="fd"><label>Forma de pago</label><select id="pp${id}"><option value="T">TPV / Tarjeta</option><option value="S">Transferencia</option><option value="E">Efectivo</option><option value="K">Pago por Banco</option><option value="D">Cargo en cuenta</option></select></div>
+</div></div>`;
+$('pagoCont').insertAdjacentHTML('beforeend',h);calcTotals()}
+
+function rmPago(id){$('p'+id).remove();if(!document.querySelectorAll('#pagoCont .dyn-card').length)$('pagoEmpty').style.display='block';calcTotals()}
+
+/* ===== TOTALS ===== */
+function calcTotals(){
+let v=parseFloat($('pvpCliente').value)||0;
+let c=parseFloat($('costeServicio').value)||0;
+let cob=0;
+document.querySelectorAll('#servCont .dyn-card').forEach(el=>{
+const id=el.id.replace('s','');
+v+=parseFloat($('sa'+id)?.value||0);
+c+=parseFloat($('sc'+id)?.value||0);
+});
+document.querySelectorAll('#pagoCont .dyn-card').forEach(el=>{
+const id=el.id.replace('p','');
+cob+=parseFloat($('pi'+id)?.value||0);
+});
+$('tVenta').textContent=fmt(v);
+$('tCoste').textContent=fmt(c);
+$('tBenef').textContent=fmt(v-c);
+$('tPdte').textContent=fmt(v-cob);
+}
+
+/* ===== GUARDAR ===== */
+async function guardarExpediente(){
+const numOP=$('numOP').value.trim();
+const titulo=$('viajeTitulo').value.trim();
+const fechaIni=$('viajeFechaInicio').value;
+const nom=$('cliNombre').value.trim();
+const ape=$('cliApellidos').value.trim();
+const dni=$('cliDni').value.trim();
+const email=$('cliEmail').value.trim();
+
+if(!numOP){return showModal('⚠️','Campo obligatorio','Introduce el número de expediente (OP)')}
+if(!numOP.toUpperCase().startsWith('OP')){return showModal('⚠️','Formato incorrecto','El número de expediente debe empezar por OP')}
+if(!titulo||!fechaIni){return showModal('⚠️','Campos obligatorios','Rellena el título del viaje y la fecha de inicio')}
+if(!nom||!ape||!dni||!email){return showModal('⚠️','Campos obligatorios','Rellena nombre, apellidos, DNI y email del cliente')}
+
+const servicios=[];
+document.querySelectorAll('#servCont .dyn-card').forEach(el=>{
+const id=el.id.replace('s','');
+servicios.push({titulo:$('sd'+id).value,pvpRecomendado:pf('sr'+id),pvpAgencia:pf('sa'+id),precioCoste:pf('sc'+id),nombreMayorista:$('sp'+id).value,mayorista:$('si'+id).value,localizador:$('sl'+id).value})});
+
+const pagos=[];
+document.querySelectorAll('#pagoCont .dyn-card').forEach(el=>{
+const id=el.id.replace('p','');
+pagos.push({descripcion:$('pd'+id).value,fecha:$('pf'+id).value,importe:pf('pi'+id),formaPago:$('pp'+id).value})});
+
+const payload={
+asesor:U.nombre,idAgente:U.idAgente,tienda:U.tienda,
+numOP:numOP.toUpperCase(),
+fechaReserva:$('fechaReserva').value,
+pvpCliente:pf('pvpCliente'),
+costeServicio:pf('costeServicio'),
+localizadorReserva:$('locReserva').value,
+viaje:{titulo,fechaInicio:fechaIni,fechaFin:$('viajeFechaFin').value,situacion:$('viajeSituacion').value,fechaLimiteCliente:$('viajeFlimCliente').value,fechaLimiteMayorista:$('viajeFlimMayo').value},
+cliente:{nombre:nom,apellidos:ape,dni,email,telefono:$('cliTel').value,ciudad:$('cliCiudad').value},
+servicios,pagos,
+observaciones:$('viajeObs').value,
+notasSalesforce:$('notasSF').value
+};
+
+const btn=$('btnSubmit');btn.disabled=true;btn.textContent='Guardando...';
+try{
+await fetch(WH_EXPEDIENTE,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+showModal('✅','¡Expediente guardado!','El expediente '+numOP+' se ha registrado correctamente.');
+}catch(e){showModal('❌','Error','No se pudo conectar. Inténtalo de nuevo.')}
+btn.disabled=false;btn.textContent='Guardar Expediente';
+}
+
+/* ===== UTILS ===== */
+function $(id){return document.getElementById(id)}
+function fmt(n){return n.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'}
+function pf(id){return parseFloat($(id)?.value)||0}
+function showModal(i,t,m){$('mIcon').textContent=i;$('mTitle').textContent=t;$('mMsg').textContent=m;$('modal').classList.add('active')}
+function closeModal(){$('modal').classList.remove('active')}
+function filterExp(){}
+</script>
+</body>
+</html>
