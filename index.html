@@ -106,6 +106,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--g900);min
 .paste-zone .paste-label{font-size:12px;font-weight:600;color:var(--gold-dark);margin-bottom:6px;display:flex;align-items:center;gap:6px}
 .paste-ok{color:var(--green);font-size:13px;font-weight:600;margin-top:8px;display:none}
 
+/* Checkbox as service */
+.chk-serv{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--g100);border:1.5px solid var(--g200);border-radius:8px;margin-top:14px;cursor:pointer;transition:all .2s}
+.chk-serv:hover{border-color:var(--gold)}
+.chk-serv.active{background:#fefaf5;border-color:var(--gold)}
+.chk-serv input[type=checkbox]{width:18px;height:18px;accent-color:var(--gold);cursor:pointer}
+.chk-serv .chk-text{font-size:13px;font-weight:600;color:var(--navy)}
+.chk-serv .chk-hint{font-size:11px;color:var(--g500);margin-top:2px}
+
 /* Margin display */
 .margin-bar{display:flex;gap:24px;align-items:center;padding:12px 16px;background:var(--g100);border-radius:8px;margin-top:8px;flex-wrap:wrap}
 .margin-item{font-size:13px;color:var(--g700)}
@@ -173,14 +181,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--g900);min
 <h1>📋 Mis Expedientes</h1>
 <button class="btn-new" onclick="showView('viewCreate')">＋ Nuevo Expediente</button>
 </div>
-
 <div class="stats">
 <div class="stat-card"><div class="stat-label">Total expedientes</div><div class="stat-val" id="stTotal">0</div></div>
 <div class="stat-card"><div class="stat-label">Abiertos</div><div class="stat-val gold" id="stOpen">0</div></div>
 <div class="stat-card"><div class="stat-label">Pendientes cobro</div><div class="stat-val" id="stPend">0</div></div>
 <div class="stat-card"><div class="stat-label">Listos facturar</div><div class="stat-val" id="stReady">0</div></div>
 </div>
-
 <div class="card">
 <div class="card-header">
 <h2>Expedientes</h2>
@@ -251,6 +257,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--g900);min
 <div class="margin-item subtle">Margen neto (–21% IVA): <strong id="mNeto">0,00 €</strong></div>
 <div class="margin-item subtle">% neto: <strong id="mNetoPct">0%</strong></div>
 </div>
+
+<!-- Checkbox: añadir como servicio -->
+<label class="chk-serv" id="chkServLabel" onclick="toggleChkServ()">
+<input type="checkbox" id="chkServicio" checked>
+<div>
+<div class="chk-text">Añadir estos datos como línea de servicio</div>
+<div class="chk-hint">Se creará un servicio automáticamente con el Num OP como descripción y Pangea como proveedor (ID 501344)</div>
+</div>
+</label>
 </div>
 
 <!-- Viaje -->
@@ -298,7 +313,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--g900);min
 
 <!-- Servicios -->
 <div class="section">
-<div class="section-title"><span class="ico">📦</span> Servicios</div>
+<div class="section-title"><span class="ico">📦</span> Servicios adicionales</div>
 <div id="servCont"></div>
 <button class="btn-add" onclick="addServ()">＋ Añadir servicio</button>
 </div>
@@ -397,34 +412,36 @@ if(id==='viewCreate')calcTotals();
 function parsePaste(){
 const txt=$('pasteArea').value;
 if(!txt.trim())return;
-
-// Importe total reserva → PVP
 const pvpMatch=txt.match(/Importe total reserva\s*\n\s*EUR\s*([\d.,]+)/i);
 if(pvpMatch){$('pvpCliente').value=parseEUR(pvpMatch[1])}
-
-// NetAmount → Coste
 const costMatch=txt.match(/NetAmount\s*\n\s*EUR\s*([\d.,]+)/i);
 if(costMatch){$('costeServicio').value=parseEUR(costMatch[1])}
-
-// Localizador
 const locMatch=txt.match(/Localizador Reserva\s*\n\s*(\S+)/i);
 if(locMatch){$('locReserva').value=locMatch[1]}
-
-// Fecha Reserva
 const fechaMatch=txt.match(/Fecha Reserva\s*\n\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
 if(fechaMatch){
 const p=fechaMatch[1].split('/');
-const iso=p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
-$('fechaReserva').value=iso;
+$('fechaReserva').value=p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
 }
-
 if(pvpMatch||costMatch||locMatch){
 $('pasteOk').style.display='block';
 calcMargins();calcTotals();
 }
 }
-
 function parseEUR(s){return parseFloat(s.replace(/\./g,'').replace(',','.'))||0}
+
+/* ===== CHECKBOX SERVICIO ===== */
+function toggleChkServ(){
+const chk=$('chkServicio');
+const label=$('chkServLabel');
+// El click del label ya toglea el checkbox, solo actualizamos estilo
+setTimeout(()=>{
+label.classList.toggle('active',chk.checked);
+calcTotals();
+},10);
+}
+// Inicializar estado visual
+document.addEventListener('DOMContentLoaded',()=>{$('chkServLabel').classList.add('active')});
 
 /* ===== MARGINS ===== */
 function calcMargins(){
@@ -483,9 +500,12 @@ function rmPago(id){$('p'+id).remove();if(!document.querySelectorAll('#pagoCont 
 
 /* ===== TOTALS ===== */
 function calcTotals(){
-let v=parseFloat($('pvpCliente').value)||0;
-let c=parseFloat($('costeServicio').value)||0;
-let cob=0;
+let v=0,c=0,cob=0;
+const chk=$('chkServicio').checked;
+if(chk){
+v+=parseFloat($('pvpCliente').value)||0;
+c+=parseFloat($('costeServicio').value)||0;
+}
 document.querySelectorAll('#servCont .dyn-card').forEach(el=>{
 const id=el.id.replace('s','');
 v+=parseFloat($('sa'+id)?.value||0);
@@ -516,7 +536,31 @@ if(!numOP.toUpperCase().startsWith('OP')){return showModal('⚠️','Formato inc
 if(!titulo||!fechaIni){return showModal('⚠️','Campos obligatorios','Rellena el título del viaje y la fecha de inicio')}
 if(!nom||!ape||!dni||!email){return showModal('⚠️','Campos obligatorios','Rellena nombre, apellidos, DNI y email del cliente')}
 
+const chk=$('chkServicio').checked;
+const manualServs=document.querySelectorAll('#servCont .dyn-card').length;
+
+// Si checkbox desactivado y no hay servicios manuales, obligar
+if(!chk && manualServs===0){
+return showModal('⚠️','Servicio obligatorio','Debes añadir al menos un servicio o activar la casilla para usar los datos de la reserva como servicio.');
+}
+
+// Construir array de servicios
 const servicios=[];
+
+// Si checkbox activado, añadir reserva como servicio
+if(chk){
+servicios.push({
+titulo:numOP.toUpperCase(),
+pvpRecomendado:pf('pvpCliente'),
+pvpAgencia:pf('pvpCliente'),
+precioCoste:pf('costeServicio'),
+nombreMayorista:'Pangea',
+mayorista:'501344',
+localizador:$('locReserva').value
+});
+}
+
+// Añadir servicios manuales
 document.querySelectorAll('#servCont .dyn-card').forEach(el=>{
 const id=el.id.replace('s','');
 servicios.push({titulo:$('sd'+id).value,pvpRecomendado:pf('sr'+id),pvpAgencia:pf('sa'+id),precioCoste:pf('sc'+id),nombreMayorista:$('sp'+id).value,mayorista:$('si'+id).value,localizador:$('sl'+id).value})});
