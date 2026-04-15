@@ -845,10 +845,10 @@ fecha:r['Fecha Emisión']||r['Fecha Emision']||'',
 proveedor:r['Proveedor']||'',
 nif:r['NIF Proveedor']||'',
 concepto:r['Concepto']||'',
-base:parseFloat(String(r['Base Imponible']).replace(',','.'))||0,
-ivaPct:parseFloat(String(r['IVA %']||r['IVA%']||'0').replace(',','.'))||0,
-ivaImporte:parseFloat(String(r['IVA Importe']||'0').replace(',','.'))||0,
-total:parseFloat(String(r['Total']||'0').replace(',','.'))||0,
+base:parseNum(r['Base Imponible']),
+ivaPct:parseNum(r['IVA %']||r['IVA%']||0),
+ivaImporte:parseNum(r['IVA Importe']),
+total:parseNum(r['Total']),
 fechaPago:r['Fecha Cobro/Pago']||'',
 categoria:cat,
 estado:r['Estado Pago']||'',
@@ -909,6 +909,7 @@ tbody.innerHTML=html;
 function toggleGasto(idx,checked){
 gastosData[idx].selected=checked;
 updateGastosStats();
+if(currentFilter==='selected')renderGastosTable();
 }
 
 function toggleSelectAll(){
@@ -942,17 +943,25 @@ function setFilter(f,btn){
 currentFilter=f;
 document.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active'));
 btn.classList.add('active');
+$('chkSelectAll').checked=false;
 renderGastosTable();
+updateGastosStats();
 }
 
 function filterGastos(){
 renderGastosTable();
+updateGastosStats();
 }
 
 function loadNewFile(){
 $('gastosStep2').style.display='none';
 $('gastosStep1').style.display='block';
 $('fileInput').value='';
+$('searchGastos').value='';
+$('chkSelectAll').checked=false;
+currentFilter='all';
+document.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active'));
+document.querySelector('.filter-pill').classList.add('active');
 gastosData=[];
 }
 
@@ -1012,6 +1021,14 @@ btn.disabled=false;btn.textContent='Enviar seleccionadas a Siturweb';
 function $(id){return document.getElementById(id)}
 function fmt(n){return n.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'}
 function pf(id){return parseFloat($(id)?.value)||0}
+function parseNum(v){
+if(typeof v==='number')return v;
+if(!v)return 0;
+let s=String(v).trim();
+// Spanish format: 8.400,00 → remove dots, replace comma with dot
+if(s.includes(',')){ s=s.replace(/\./g,'').replace(',','.'); }
+return parseFloat(s)||0;
+}
 function escHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 function showModal(i,t,m){$('mIcon').textContent=i;$('mTitle').textContent=t;$('mMsg').textContent=m;$('modal').classList.add('active')}
 function closeModal(){$('modal').classList.remove('active')}
