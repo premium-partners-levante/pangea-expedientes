@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pangea — Gestión de Expedientes</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 :root{
@@ -43,6 +44,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--g900);min
 .btn-logout{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;padding:6px 14px;border-radius:6px;font-size:12px;font-family:inherit;cursor:pointer}
 .btn-logout:hover{background:rgba(255,255,255,.2)}
 
+/* === NAV TABS === */
+.nav-tabs{background:var(--navy-dark);padding:0 24px;display:flex;gap:0;border-bottom:2px solid rgba(255,255,255,.06)}
+.nav-tab{padding:12px 24px;color:rgba(255,255,255,.5);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;display:flex;align-items:center;gap:7px}
+.nav-tab:hover{color:rgba(255,255,255,.8)}
+.nav-tab.active{color:var(--gold-light);border-bottom-color:var(--gold)}
+@media(max-width:500px){.nav-tab{padding:10px 14px;font-size:12px}}
+
 /* === VIEWS === */
 .view{display:none;max-width:960px;margin:0 auto;padding:24px 20px 40px}
 .view.active{display:block}
@@ -61,7 +69,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--g900);min
 .stat-card .stat-val.gold{color:var(--gold)}
 
 .card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
-.card-header{padding:16px 20px;border-bottom:1px solid var(--g200);display:flex;align-items:center;justify-content:space-between}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--g200);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .card-header h2{font-size:16px;color:var(--navy)}
 .search-box{padding:8px 14px;border:1.5px solid var(--g200);border-radius:7px;font-size:13px;font-family:inherit;outline:none;width:260px;transition:border .2s}
 .search-box:focus{border-color:var(--gold)}
@@ -149,6 +157,61 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--g900);min
 .modal h3{font-size:20px;color:var(--navy);margin-bottom:8px}
 .modal p{color:var(--g500);font-size:14px;margin-bottom:20px}
 .btn-modal{padding:10px 32px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer}
+
+/* ========================================
+   GASTOS OPERATIVOS MODULE
+   ======================================== */
+
+/* Upload zone */
+.upload-zone{border:2px dashed var(--g300);border-radius:12px;padding:40px 20px;text-align:center;transition:all .3s;cursor:pointer;background:var(--white)}
+.upload-zone:hover{border-color:var(--gold);background:#fefaf5}
+.upload-zone.dragover{border-color:var(--gold);background:#fefaf5;box-shadow:0 0 0 4px rgba(196,151,92,.15)}
+.upload-zone .uz-icon{font-size:40px;margin-bottom:8px}
+.upload-zone .uz-title{font-size:15px;font-weight:600;color:var(--navy);margin-bottom:4px}
+.upload-zone .uz-hint{font-size:12px;color:var(--g500)}
+.upload-zone input[type=file]{display:none}
+
+/* Alert box */
+.alert-box{border-radius:10px;padding:16px 20px;margin-bottom:20px;font-size:13px;line-height:1.6;display:flex;gap:12px;align-items:flex-start}
+.alert-box .alert-icon{font-size:22px;flex-shrink:0;margin-top:1px}
+.alert-box.alert-warning{background:#fff8e1;border:1.5px solid #ffe082;color:#6d4c00}
+.alert-box.alert-info{background:#e3f2fd;border:1.5px solid #90caf9;color:#0d47a1}
+.alert-box.alert-success{background:#e8f5e9;border:1.5px solid #a5d6a7;color:#1b5e20}
+
+/* Gastos table */
+.gastos-controls{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.gastos-controls .gc-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.gastos-controls .gc-right{display:flex;align-items:center;gap:8px}
+
+.filter-pill{padding:6px 14px;border:1.5px solid var(--g200);border-radius:20px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;background:var(--white);color:var(--g700);transition:all .2s}
+.filter-pill:hover{border-color:var(--gold)}
+.filter-pill.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+.gastos-table{width:100%;border-collapse:collapse;font-size:12px}
+.gastos-table thead{position:sticky;top:0;z-index:2}
+.gastos-table th{text-align:left;padding:10px 12px;font-size:11px;color:var(--g500);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--g200);background:var(--g100)}
+.gastos-table td{padding:10px 12px;border-bottom:1px solid var(--g100);vertical-align:middle}
+.gastos-table tr:hover td{background:#fefaf5}
+.gastos-table input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold);cursor:pointer}
+.gastos-table .cat-tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:var(--g200);color:var(--g700)}
+.gastos-table .cat-tag.turistic{background:#fff3e0;color:#e65100}
+.gastos-table .cat-tag.operative{background:#e8f5e9;color:#2e7d32}
+.gastos-table .amount{text-align:right;font-weight:600;white-space:nowrap}
+.gastos-scroll{max-height:520px;overflow-y:auto;border:1px solid var(--g200);border-radius:8px}
+
+/* Selection summary bar */
+.selection-bar{position:fixed;bottom:0;left:0;right:0;background:var(--navy);color:#fff;padding:12px 24px;display:none;align-items:center;justify-content:center;gap:24px;z-index:100;animation:slideUp .3s ease}
+.selection-bar.show{display:flex}
+.selection-bar .sb-info{font-size:13px}
+.selection-bar .sb-info strong{color:var(--gold-light)}
+.btn-send-gastos{padding:10px 28px;background:var(--gold);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .2s}
+.btn-send-gastos:hover{background:var(--gold-dark)}
+.btn-send-gastos:disabled{opacity:.6;cursor:not-allowed}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+/* Gastos stats */
+.gastos-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+@media(max-width:700px){.gastos-stats{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -170,10 +233,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--g900);min
 <div class="topbar">
 <div class="logo">PANGEA</div>
 <div class="topbar-right">
-<div><span>Asesor:</span> <strong id="tbUser">—</strong> &nbsp;<span>Tienda:</span> <strong id="tbTienda">—</strong></div>
+<div><span>Usuario:</span> <strong id="tbUser">—</strong> &nbsp;<span>Tienda:</span> <strong id="tbTienda">—</strong></div>
 <button class="btn-logout" onclick="doLogout()">Cerrar sesión</button>
 </div>
 </div>
+
+<!-- Nav Tabs -->
+<div class="nav-tabs" id="navTabs">
+<button class="nav-tab active" data-section="expedientes" onclick="switchSection('expedientes')">📋 Expedientes</button>
+<button class="nav-tab" data-section="gastos" onclick="switchSection('gastos')">🧾 Gastos Operativos</button>
+</div>
+
+<!-- ============================================
+     SECTION: EXPEDIENTES
+     ============================================ -->
+<div id="sectionExpedientes">
 
 <!-- == DASHBOARD == -->
 <div class="view active" id="viewDash">
@@ -347,7 +421,108 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--g900);min
 </div>
 </div>
 
-<!-- Totals bar -->
+</div><!-- /sectionExpedientes -->
+
+<!-- ============================================
+     SECTION: GASTOS OPERATIVOS
+     ============================================ -->
+<div id="sectionGastos" style="display:none">
+<div class="view active" id="viewGastos">
+
+<div class="dash-header">
+<h1>🧾 Gastos Operativos</h1>
+</div>
+
+<!-- Step 1: Upload -->
+<div id="gastosStep1">
+<div class="section">
+<div class="section-title"><span class="ico">📤</span> Cargar archivo de facturas</div>
+<p style="font-size:13px;color:var(--g700);margin-bottom:16px">Sube el Excel de control de facturas. El sistema identificará automáticamente las categorías y te permitirá seleccionar qué facturas enviar como gasto a Siturweb.</p>
+<div class="upload-zone" id="uploadZone" onclick="$('fileInput').click()">
+<div class="uz-icon">📁</div>
+<div class="uz-title">Arrastra el archivo Excel aquí o haz clic para seleccionar</div>
+<div class="uz-hint">Formatos aceptados: .xlsx, .xls</div>
+<input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFileUpload(event)">
+</div>
+</div>
+</div>
+
+<!-- Step 2: Review & Select -->
+<div id="gastosStep2" style="display:none">
+
+<!-- Alert: important reminder -->
+<div class="alert-box alert-warning">
+<div class="alert-icon">⚠️</div>
+<div>
+<strong>¡Importante! Revisa antes de enviar.</strong><br>
+Algunas facturas de categorías turísticas (vuelos, trenes, hoteles...) pueden ser <strong>gastos de empresa</strong> y no de clientes. Por ejemplo: desplazamientos de empleados a formaciones, ferias o reuniones. Esas facturas <strong>sí deben enviarse como gasto operativo</strong>, no van en expedientes de viaje. Márcalas si corresponde.
+</div>
+</div>
+
+<!-- Stats -->
+<div class="gastos-stats">
+<div class="stat-card"><div class="stat-label">Total facturas</div><div class="stat-val" id="gstTotal">0</div></div>
+<div class="stat-card"><div class="stat-label">Seleccionadas</div><div class="stat-val gold" id="gstSelected">0</div></div>
+<div class="stat-card"><div class="stat-label">Importe seleccionado</div><div class="stat-val" id="gstAmount">0,00 €</div></div>
+</div>
+
+<!-- Controls -->
+<div class="card">
+<div class="card-header">
+<h2>Facturas cargadas</h2>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+<input type="text" class="search-box" placeholder="Buscar proveedor, concepto..." id="searchGastos" oninput="filterGastos()" style="width:200px">
+<button class="btn-add" onclick="loadNewFile()" style="margin:0">📁 Cargar otro archivo</button>
+</div>
+</div>
+
+<!-- Filter pills -->
+<div style="padding:12px 20px;border-bottom:1px solid var(--g200);display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<span style="font-size:11px;color:var(--g500);font-weight:600;text-transform:uppercase;margin-right:4px">Filtrar:</span>
+<button class="filter-pill active" onclick="setFilter('all',this)">Todas</button>
+<button class="filter-pill" onclick="setFilter('operative',this)">Operativas</button>
+<button class="filter-pill" onclick="setFilter('turistic',this)">Turísticas</button>
+<button class="filter-pill" onclick="setFilter('selected',this)">Seleccionadas</button>
+<span style="flex:1"></span>
+<label style="font-size:12px;color:var(--g700);cursor:pointer;display:flex;align-items:center;gap:5px">
+<input type="checkbox" id="chkSelectAll" onchange="toggleSelectAll()" style="accent-color:var(--gold)">
+Marcar/Desmarcar visibles
+</label>
+</div>
+
+<!-- Table -->
+<div class="gastos-scroll" id="gastosScroll">
+<table class="gastos-table" id="gastosTable">
+<thead>
+<tr>
+<th style="width:36px"></th>
+<th>Fecha</th>
+<th>Proveedor</th>
+<th>NIF</th>
+<th>Concepto</th>
+<th style="text-align:right">Base</th>
+<th>IVA%</th>
+<th style="text-align:right">Total</th>
+<th>Categoría</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody id="gastosBody"></tbody>
+</table>
+</div>
+</div>
+
+<!-- Send button area -->
+<div class="submit-area">
+<button class="btn-submit" id="btnSendGastos" onclick="enviarGastos()">Enviar seleccionadas a Siturweb</button>
+</div>
+
+</div><!-- /gastosStep2 -->
+
+</div><!-- /viewGastos -->
+</div><!-- /sectionGastos -->
+
+<!-- Totals bar (expedientes) -->
 <div class="totals-bar" id="totalsBar">
 <div class="ti"><span>Total Venta</span><strong id="tVenta">0,00 €</strong></div>
 <div class="ti"><span>Total Coste</span><strong id="tCoste">0,00 €</strong></div>
@@ -370,7 +545,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--g900);min
 /* ===== CONFIG ===== */
 const WH_LOGIN='https://hook.eu1.make.com/kf4v3ec8oxc63bv794t9dlo27z66kgtc';
 const WH_EXPEDIENTE='https://hook.eu1.make.com/nh6wpq2nmu8ps4kgj4tg3fejixfc61og';
+const WH_GASTOS='https://hook.eu1.make.com/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'; // TODO: sustituir por webhook real
 let U=null;
+
+/* Categorías turísticas (no se pre-seleccionan) */
+const CAT_TURISTIC=[
+'Coste servicios turísticos','REAV - Coste proveedor',
+'Coste venta - Cruceros','Coste venta - Vuelos','Coste venta - Trenes'
+];
 
 /* ===== LOGIN ===== */
 $('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
@@ -392,16 +574,42 @@ $('loginScreen').style.display='none';
 $('app').style.display='block';
 $('tbUser').textContent=U.nombre;
 $('tbTienda').textContent=U.tienda||'—';
+updateNavVisibility();
 }catch(e){err.textContent='Error de conexión. Inténtalo de nuevo.';btn.disabled=false;btn.textContent='Acceder'}}
 
 function doLogout(){
 U=null;$('app').style.display='none';$('loginScreen').style.display='flex';
 $('loginUser').value='';$('loginPass').value='';$('loginError').textContent='';
-$('loginBtn').disabled=false;$('loginBtn').textContent='Acceder'}
+$('loginBtn').disabled=false;$('loginBtn').textContent='Acceder';
+switchSection('expedientes');
+}
+
+/* ===== NAV VISIBILITY (role-based) ===== */
+function updateNavVisibility(){
+// Todos ven expedientes. Gastos solo admin/contable/dircom
+const gastosTab=document.querySelector('[data-section="gastos"]');
+if(U&&(U.rol==='super_admin'||U.rol==='admin'||U.rol==='contable'||U.rol==='dircom')){
+gastosTab.style.display='flex';
+}else{
+gastosTab.style.display='none';
+}
+}
+
+/* ===== SECTION SWITCHING ===== */
+function switchSection(section){
+document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+document.querySelector(`[data-section="${section}"]`).classList.add('active');
+
+$('sectionExpedientes').style.display=section==='expedientes'?'block':'none';
+$('sectionGastos').style.display=section==='gastos'?'block':'none';
+
+// Hide totals bar when in gastos
+$('totalsBar').classList.remove('show');
+}
 
 /* ===== NAVIGATION ===== */
 function showView(id){
-document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+document.querySelectorAll('#sectionExpedientes .view').forEach(v=>v.classList.remove('active'));
 $(id).classList.add('active');
 const bar=$('totalsBar');
 bar.classList.toggle('show',id==='viewCreate');
@@ -434,13 +642,11 @@ function parseEUR(s){return parseFloat(s.replace(/\./g,'').replace(',','.'))||0}
 function toggleChkServ(){
 const chk=$('chkServicio');
 const label=$('chkServLabel');
-// El click del label ya toglea el checkbox, solo actualizamos estilo
 setTimeout(()=>{
 label.classList.toggle('active',chk.checked);
 calcTotals();
 },10);
 }
-// Inicializar estado visual
 document.addEventListener('DOMContentLoaded',()=>{$('chkServLabel').classList.add('active')});
 
 /* ===== MARGINS ===== */
@@ -521,7 +727,7 @@ $('tBenef').textContent=fmt(v-c);
 $('tPdte').textContent=fmt(v-cob);
 }
 
-/* ===== GUARDAR ===== */
+/* ===== GUARDAR EXPEDIENTE ===== */
 async function guardarExpediente(){
 const numOP=$('numOP').value.trim();
 const titulo=$('viajeTitulo').value.trim();
@@ -538,16 +744,11 @@ if(!nom||!ape||!dni||!email){return showModal('⚠️','Campos obligatorios','Re
 
 const chk=$('chkServicio').checked;
 const manualServs=document.querySelectorAll('#servCont .dyn-card').length;
-
-// Si checkbox desactivado y no hay servicios manuales, obligar
 if(!chk && manualServs===0){
 return showModal('⚠️','Servicio obligatorio','Debes añadir al menos un servicio o activar la casilla para usar los datos de la reserva como servicio.');
 }
 
-// Construir array de servicios
 const servicios=[];
-
-// Si checkbox activado, añadir reserva como servicio
 if(chk){
 servicios.push({
 titulo:numOP.toUpperCase(),
@@ -559,8 +760,6 @@ mayorista:'501344',
 localizador:$('locReserva').value
 });
 }
-
-// Añadir servicios manuales
 document.querySelectorAll('#servCont .dyn-card').forEach(el=>{
 const id=el.id.replace('s','');
 servicios.push({titulo:$('sd'+id).value,pvpRecomendado:pf('sr'+id),pvpAgencia:pf('sa'+id),precioCoste:pf('sc'+id),nombreMayorista:$('sp'+id).value,mayorista:$('si'+id).value,localizador:$('sl'+id).value})});
@@ -592,10 +791,228 @@ showModal('✅','¡Expediente guardado!','El expediente '+numOP+' se ha registra
 btn.disabled=false;btn.textContent='Guardar Expediente';
 }
 
+/* =============================================
+   GASTOS OPERATIVOS MODULE
+   ============================================= */
+let gastosData=[];  // All rows from Excel
+let currentFilter='all';
+
+/* Drag & Drop */
+const uz=$('uploadZone');
+if(uz){
+uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('dragover')});
+uz.addEventListener('dragleave',()=>uz.classList.remove('dragover'));
+uz.addEventListener('drop',e=>{
+e.preventDefault();uz.classList.remove('dragover');
+const f=e.dataTransfer.files[0];
+if(f)processFile(f);
+});
+}
+
+function handleFileUpload(e){
+const f=e.target.files[0];
+if(f)processFile(f);
+}
+
+function processFile(file){
+if(!file.name.match(/\.xlsx?$/i)){
+showModal('⚠️','Formato no válido','Solo se aceptan archivos .xlsx o .xls');
+return;
+}
+const reader=new FileReader();
+reader.onload=function(e){
+try{
+const data=new Uint8Array(e.target.result);
+const wb=XLSX.read(data,{type:'array'});
+const ws=wb.Sheets[wb.SheetNames[0]];
+const json=XLSX.utils.sheet_to_json(ws,{defval:''});
+parseGastosData(json);
+}catch(err){
+showModal('❌','Error al leer','No se pudo procesar el archivo Excel. Verifica que sea válido.');
+}
+};
+reader.readAsArrayBuffer(file);
+}
+
+function parseGastosData(rows){
+gastosData=rows.map((r,i)=>{
+const cat=(r['Categoría']||r['Categoria']||'').trim();
+const isTuristic=CAT_TURISTIC.some(c=>cat.toLowerCase()===c.toLowerCase());
+return{
+idx:i,
+numFactura:r['Nº Factura']||r['N Factura']||'',
+fecha:r['Fecha Emisión']||r['Fecha Emision']||'',
+proveedor:r['Proveedor']||'',
+nif:r['NIF Proveedor']||'',
+concepto:r['Concepto']||'',
+base:parseFloat(String(r['Base Imponible']).replace(',','.'))||0,
+ivaPct:parseFloat(String(r['IVA %']||r['IVA%']||'0').replace(',','.'))||0,
+ivaImporte:parseFloat(String(r['IVA Importe']||'0').replace(',','.'))||0,
+total:parseFloat(String(r['Total']||'0').replace(',','.'))||0,
+fechaPago:r['Fecha Cobro/Pago']||'',
+categoria:cat,
+estado:r['Estado Pago']||'',
+observaciones:r['Observaciones']||'',
+isTuristic,
+selected:!isTuristic  // Pre-select operative, deselect turistic
+};
+});
+
+// Show step 2
+$('gastosStep1').style.display='none';
+$('gastosStep2').style.display='block';
+renderGastosTable();
+updateGastosStats();
+}
+
+function renderGastosTable(){
+const tbody=$('gastosBody');
+const search=($('searchGastos')?.value||'').toLowerCase();
+let html='';
+let visibleCount=0;
+
+gastosData.forEach(r=>{
+// Filter
+if(currentFilter==='operative'&&r.isTuristic)return;
+if(currentFilter==='turistic'&&!r.isTuristic)return;
+if(currentFilter==='selected'&&!r.selected)return;
+if(search){
+const haystack=(r.proveedor+r.concepto+r.nif+r.categoria+r.numFactura).toLowerCase();
+if(!haystack.includes(search))return;
+}
+
+visibleCount++;
+const catClass=r.isTuristic?'turistic':'operative';
+const catLabel=r.isTuristic?'Turística':'Operativo';
+
+html+=`<tr>
+<td><input type="checkbox" ${r.selected?'checked':''} onchange="toggleGasto(${r.idx},this.checked)"></td>
+<td style="white-space:nowrap">${escHtml(r.fecha)}</td>
+<td><strong>${escHtml(r.proveedor)}</strong></td>
+<td style="font-size:11px;color:var(--g500)">${escHtml(r.nif)}</td>
+<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(r.concepto)}">${escHtml(r.concepto)}</td>
+<td class="amount">${r.base.toLocaleString('es-ES',{minimumFractionDigits:2})} €</td>
+<td style="text-align:center">${r.ivaPct}%</td>
+<td class="amount">${r.total.toLocaleString('es-ES',{minimumFractionDigits:2})} €</td>
+<td><span class="cat-tag ${catClass}">${escHtml(r.categoria||'—')}</span></td>
+<td><span class="badge ${r.estado==='Pagado'?'badge-open':'badge-pending'}">${escHtml(r.estado||'—')}</span></td>
+</tr>`;
+});
+
+if(visibleCount===0){
+html=`<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--g500)">No hay facturas que coincidan con los filtros</td></tr>`;
+}
+
+tbody.innerHTML=html;
+}
+
+function toggleGasto(idx,checked){
+gastosData[idx].selected=checked;
+updateGastosStats();
+}
+
+function toggleSelectAll(){
+const checkAll=$('chkSelectAll').checked;
+const search=($('searchGastos')?.value||'').toLowerCase();
+gastosData.forEach(r=>{
+let visible=true;
+if(currentFilter==='operative'&&r.isTuristic)visible=false;
+if(currentFilter==='turistic'&&!r.isTuristic)visible=false;
+if(currentFilter==='selected'&&!r.selected)visible=false;
+if(search){
+const haystack=(r.proveedor+r.concepto+r.nif+r.categoria+r.numFactura).toLowerCase();
+if(!haystack.includes(search))visible=false;
+}
+if(visible)r.selected=checkAll;
+});
+renderGastosTable();
+updateGastosStats();
+}
+
+function updateGastosStats(){
+const total=gastosData.length;
+const sel=gastosData.filter(r=>r.selected);
+const amt=sel.reduce((s,r)=>s+r.total,0);
+$('gstTotal').textContent=total;
+$('gstSelected').textContent=sel.length;
+$('gstAmount').textContent=amt.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+}
+
+function setFilter(f,btn){
+currentFilter=f;
+document.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active'));
+btn.classList.add('active');
+renderGastosTable();
+}
+
+function filterGastos(){
+renderGastosTable();
+}
+
+function loadNewFile(){
+$('gastosStep2').style.display='none';
+$('gastosStep1').style.display='block';
+$('fileInput').value='';
+gastosData=[];
+}
+
+/* Send selected to Siturweb */
+async function enviarGastos(){
+const sel=gastosData.filter(r=>r.selected);
+if(sel.length===0){
+return showModal('⚠️','Nada seleccionado','Selecciona al menos una factura para enviar.');
+}
+
+const btn=$('btnSendGastos');
+btn.disabled=true;btn.textContent='Enviando '+sel.length+' facturas...';
+
+try{
+const payload={
+action:'enviar_gastos',
+usuario:U.nombre,
+facturas:sel.map(r=>({
+numFactura:r.numFactura,
+fecha:r.fecha,
+proveedor:r.proveedor,
+nif:r.nif,
+concepto:r.concepto,
+base:r.base,
+ivaPct:r.ivaPct,
+ivaImporte:r.ivaImporte,
+total:r.total,
+fechaPago:r.fechaPago,
+categoria:r.categoria,
+estado:r.estado,
+observaciones:r.observaciones
+}))
+};
+
+const resp=await fetch(WH_GASTOS,{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify(payload)
+});
+
+if(resp.ok){
+showModal('✅','¡Enviado!',sel.length+' facturas enviadas a Siturweb para su registro como gastos operativos.');
+// Mark sent items
+sel.forEach(r=>r.selected=false);
+renderGastosTable();
+updateGastosStats();
+}else{
+showModal('❌','Error','Error al enviar. Inténtalo de nuevo.');
+}
+}catch(e){
+showModal('❌','Error de conexión','No se pudo conectar con el servidor.');
+}
+btn.disabled=false;btn.textContent='Enviar seleccionadas a Siturweb';
+}
+
 /* ===== UTILS ===== */
 function $(id){return document.getElementById(id)}
 function fmt(n){return n.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'}
 function pf(id){return parseFloat($(id)?.value)||0}
+function escHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 function showModal(i,t,m){$('mIcon').textContent=i;$('mTitle').textContent=t;$('mMsg').textContent=m;$('modal').classList.add('active')}
 function closeModal(){$('modal').classList.remove('active')}
 function filterExp(){}
